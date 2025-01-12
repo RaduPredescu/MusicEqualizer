@@ -24,8 +24,11 @@ class Signal:
         try:
             self.sampling_rate, self.signal = wavfile.read(self.signal_path)
             self.label_result.config(text="Semnalul a fost incarcat cu succes")
-        except:
+            
+        except Exception as e:
             self.label_result.config(text="Eroare la incarcarea semnalului")
+            error_message = f"Eroare la incarcarea semnalului: {str(e)}"
+            self.label_result.config(text=error_message)
 
     # TODO implement equalizer functions
     def apply_equalizer(self):
