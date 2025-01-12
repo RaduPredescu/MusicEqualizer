@@ -1,32 +1,83 @@
 import os
-from scipy.io import wavfile
-
+import sounddevice as sd
+from scipy.signal import butter, lfilter
+import numpy as np
 
 class Signal:
-    def __init__(self, entry_signal_path, label_result):
-        self.entry_signal_path = entry_signal_path
-        self.signal_path = ""
-        self.sampling_rate = 0.0
-        self.signal = []
+    def __init__(self, input_device_var, output_device_var, label_result):
+        self.input_device_var = input_device_var
+        self.output_device_var = output_device_var
         self.label_result = label_result
+        self.sampling_rate = 44100
+        self.stream = None
 
-    def load_signal(self):
-        self.signal_path = self.entry_signal_path.get().strip()
+    def start_processing(self, eq_values):
+        input_device = self.input_device_var.get()
+        output_device = self.output_device_var.get()
 
-        if not self.signal_path:
-            self.label_result.config(text="Introdu path-ul")
-            return
-
-        if not os.path.exists(self.signal_path):
-            self.label_result.config(text="Path-ul nu exista")
+        if not input_device or not output_device:
+            self.label_result.config(text="Please select both input and output devices.")
             return
 
         try:
-            self.sampling_rate, self.signal = wavfile.read(self.signal_path)
-            self.label_result.config(text="Semnalul a fost incarcat cu succes")
-        except:
-            self.label_result.config(text="Eroare la incarcarea semnalului")
+            input_index = [device['name'] for device in sd.query_devices()].index(input_device)
+            output_index = [device['name'] for device in sd.query_devices()].index(output_device)
 
-    # TODO implement equalizer functions
-    def apply_equalizer(self):
-        pass
+            # Define frequency ranges for the equalizer bands
+            frequency_bands = {
+                '<31': (0, 31),
+                '63': (31, 63),
+                '125': (63, 125),
+                '250': (125, 250),
+                '500': (250, 500),
+                '1K': (500, 1000),
+                '2K': (1000, 2000),
+                '4K': (2000, 4000),
+                '8K': (4000, 8000),
+                '>16K': (16000, self.sampling_rate / 2),
+            }
+
+            # Callback function for the audio stream
+            def callback(indata, outdata, frames, time, status):
+                if status:
+                    print(status)
+
+                processed_data = indata.copy()
+                nyquist = 0.5 * self.sampling_rate
+
+                # Apply equalizer filters
+                for freq_label, gain in eq_values.items():
+                    low, high = frequency_bands.get(freq_label, (0, 0))
+                    
+                    # Normalize frequency range
+                    low_norm = low / nyquist
+                    high_norm = high / nyquist
+
+                    if low_norm <= 0 or high_norm >= 1 or low_norm >= high_norm:
+                        continue  # Skip invalid frequency ranges
+
+                    b, a = butter(2, [low_norm, high_norm], btype='band')
+                    band = lfilter(b, a, indata[:, 0])
+                    processed_data[:, 0] += band * (gain / 10.0)
+
+                outdata[:] = processed_data
+
+            # Start the audio stream
+            self.stream = sd.Stream(
+                device=(input_index, output_index),
+                samplerate=self.sampling_rate,
+                channels=1,
+                callback=callback
+            )
+            self.stream.start()
+            self.label_result.config(text="Audio processing started.")
+
+        except Exception as e:
+            self.label_result.config(text=f"Error: {e}")
+
+    def stop_processing(self):
+        if self.stream:
+            self.stream.stop()
+            self.stream.close()
+            self.stream = None
+            self.label_result.config(text="Audio processing stopped.")
