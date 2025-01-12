@@ -1,13 +1,13 @@
-import os
 import sounddevice as sd
 from scipy.signal import butter, lfilter
 import numpy as np
 
 class Signal:
-    def __init__(self, input_device_var, output_device_var, label_result):
+    def __init__(self, input_device_var, output_device_var, label_result, sliders):
         self.input_device_var = input_device_var
         self.output_device_var = output_device_var
         self.label_result = label_result
+        self.sliders = sliders  # Store sliders for dynamic access
         self.sampling_rate = 44100
         self.stream = None
 
@@ -42,13 +42,18 @@ class Signal:
                 if status:
                     print(status)
 
-                processed_data = indata.copy()
+                # Initialize processed_data as zeros
+                processed_data = np.zeros_like(indata)
+
                 nyquist = 0.5 * self.sampling_rate
 
+                # Dynamically fetch the slider values for each band
+                current_eq_values = {freq: self.sliders[freq].get() for freq in frequency_bands.keys()}
+
                 # Apply equalizer filters
-                for freq_label, gain in eq_values.items():
+                for freq_label, gain in current_eq_values.items():
                     low, high = frequency_bands.get(freq_label, (0, 0))
-                    
+
                     # Normalize frequency range
                     low_norm = low / nyquist
                     high_norm = high / nyquist
@@ -56,10 +61,16 @@ class Signal:
                     if low_norm <= 0 or high_norm >= 1 or low_norm >= high_norm:
                         continue  # Skip invalid frequency ranges
 
+                    # Design the Butterworth bandpass filter
                     b, a = butter(2, [low_norm, high_norm], btype='band')
+
+                    # Apply the filter to the input data
                     band = lfilter(b, a, indata[:, 0])
+
+                    # Scale the band by the slider gain
                     processed_data[:, 0] += band * (gain / 10.0)
 
+                # Write the processed data to the output buffer
                 outdata[:] = processed_data
 
             # Start the audio stream
@@ -67,7 +78,7 @@ class Signal:
                 device=(input_index, output_index),
                 samplerate=self.sampling_rate,
                 channels=1,
-                callback=callback
+                callback=callback,
             )
             self.stream.start()
             self.label_result.config(text="Audio processing started.")

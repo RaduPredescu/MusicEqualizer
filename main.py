@@ -22,7 +22,7 @@ for freq in frequencies:
     col_frame = ttk.Frame(frame)
     col_frame.pack(side=tk.LEFT, padx=5)
 
-    slider = ttk.Scale(col_frame, from_=10, to=-10, length=200, orient=tk.VERTICAL)
+    slider = ttk.Scale(col_frame, from_=10, to=0, length=200, orient=tk.VERTICAL)
     slider.set(0)  # Default position
     slider.pack()
     sliders[freq] = slider
@@ -64,14 +64,14 @@ label_result = ttk.Label(
 label_result.pack(pady=20)
 
 # Initialize the Signal class
-signal = Signal(input_device_var, output_device_var, label_result)
+signal = Signal(input_device_var, output_device_var, label_result, sliders)
 
 # Frame for buttons
 frame_buttons = ttk.Frame(root)
 frame_buttons.pack(pady=20)
 
 def apply_equalizer():
-    # Retrieve slider values and process the audio stream
+    # Start the audio processing with equalizer adjustments
     eq_values = {freq: sliders[freq].get() for freq in frequencies}
     signal.start_processing(eq_values)
 
