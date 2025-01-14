@@ -44,14 +44,28 @@ class Signal:
             self.label_result.config(text="Nu este incarcat niciun semnal")
             return
 
-        gains = [slider.get() for slider in self.sliders]
-        signal_fft = np.fft.rfft(self.signal)
+        # Frequency bands for the equalizer
+        center_frequencies = [60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000]  # in Hz
+        bandwidth_factor = 1 / 3  # ±1/3 octave
+
+        # Get FFT bins and frequencies
         freqs = np.fft.rfftfreq(len(self.signal), d=1 / self.sampling_rate)
+        signal_fft = np.fft.rfft(self.signal)
 
-        for i, gain in enumerate(gains):
-            band = (freqs > i * 60 * (2 ** i)) & (freqs <= i * 60 * (2 ** (i + 1)))
-            signal_fft[band] *= 10 ** (gain)
+        # Apply equalizer gains
+        gains = [slider.get() for slider in self.sliders]
+        for center, gain in zip(center_frequencies, gains):
+            # Calculate band range
+            low = center / (2 ** (bandwidth_factor / 2))
+            high = center * (2 ** (bandwidth_factor / 2))
 
+            # Identify bins in this range
+            band = (freqs >= low) & (freqs < high)
+
+            # Apply gain (convert dB to linear scale)
+            signal_fft[band] *= 10 ** (gain / 20)
+
+        # Convert back to time domain
         self.processed_signal = np.fft.irfft(signal_fft).astype(np.float32)
 
         # Apply volume adjustment
@@ -59,6 +73,7 @@ class Signal:
             volume = self.volume_slider.get()
             self.processed_signal *= volume
 
+        # Clip to int16 range
         self.processed_signal = np.clip(self.processed_signal, -32768, 32767).astype(np.int16)
         self.label_result.config(text="Egalizatorul a fost aplicat")
 
