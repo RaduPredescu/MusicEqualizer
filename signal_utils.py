@@ -63,7 +63,7 @@ class Signal:
             band = (freqs >= low) & (freqs < high)
 
             # Apply gain (convert dB to linear scale)
-            signal_fft[band] *= 10 ** (gain / 20)
+            signal_fft[band] *= 10 ** (gain)
 
         # Convert back to time domain
         self.processed_signal = np.fft.irfft(signal_fft).astype(np.float32)
