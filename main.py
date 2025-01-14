@@ -9,7 +9,7 @@ root.geometry("1920x1080")
 label_title = ttk.Label(root, text="Egalizator Audio", font=("Arial", 24))
 label_title.pack(pady=20)
 
-# TODO decide on what frequencies we want to implement
+# Frequencies for equalizer sliders
 frequencies = ["500Hz"]
 sliders = []
 
@@ -20,8 +20,9 @@ for freq in frequencies:
     col_frame = ttk.Frame(frame)
     col_frame.pack(side=tk.LEFT, padx=5)
 
-    slider = ttk.Scale(col_frame, from_=10, to=-10, length=200, orient=tk.VERTICAL)
-    slider.set(0)
+    # Slider with range (0, 2)
+    slider = ttk.Scale(col_frame, from_=2, to=0, length=200, orient=tk.VERTICAL)
+    slider.set(1)  # Default value to 1 (neutral gain)
     slider.pack()
     sliders.append(slider)
 
@@ -44,7 +45,7 @@ label_result = ttk.Label(
 )
 label_result.pack(pady=20)
 
-signal = Signal(entry_signal_path, label_result)
+signal = Signal(entry_signal_path, label_result, sliders)  # Pass sliders to Signal class
 
 frame_buttons = ttk.Frame(root)
 frame_buttons.pack(pady=20)
@@ -54,10 +55,9 @@ button_load = ttk.Button(
 )
 button_load.pack(side=tk.LEFT, padx=10)
 
-button_apply = ttk.Button(
-    frame_buttons, text="Aplica modificarile", command=signal.apply_equalizer
+button_play = ttk.Button(
+    frame_buttons, text="Reda semnalul filtrat", command=signal.play_filtered_signal
 )
-button_apply.pack(side=tk.LEFT, padx=10)
-
+button_play.pack(side=tk.LEFT, padx=10)
 
 root.mainloop()
