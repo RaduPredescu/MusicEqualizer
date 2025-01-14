@@ -3,22 +3,29 @@ from tkinter import ttk, filedialog
 from signal_utils import Signal
 
 def open_file_dialog(entry):
+    #functie pentru cautarea fisierului audio
     file_path = filedialog.askopenfilename(
-        title="Selectează un fișier audio",
-        filetypes=(("Fișiere WAV", "*.wav"), ("Toate fișierele", "*.*"))
-    )
+        title="Selecteaza un fisier audio",
+        filetypes=(("Fisiere WAV", "*.wav"), ("Toate fișierele", "*.*")))
     entry.delete(0, tk.END)
     entry.insert(0, file_path)
 
 def disable_buttons(buttons):
-    """Disable a list of buttons."""
+    #dezactiveaza anumite butoane
     for button in buttons:
         button.config(state=tk.DISABLED)
 
 def enable_buttons(buttons):
-    """Enable a list of buttons."""
+    #activeaza anumite butoane
     for button in buttons:
         button.config(state=tk.NORMAL)
+
+
+def execute_action(action):
+    #executa o actiune cu butoanele dezactivate
+    disable_buttons(all_buttons)
+    root.after(100, lambda: [action(), enable_buttons(all_buttons)])
+
 
 root = tk.Tk()
 root.title("Egalizator Audio")
@@ -36,43 +43,39 @@ frame.pack(pady=10)
 signal = None
 
 def create_sliders(signal_obj):
+    #functie ce creaza sliderele
     for freq in frequencies:
         col_frame = ttk.Frame(frame)
         col_frame.pack(side=tk.LEFT, padx=5)
-
+        #sliderele determina amplificarea pe fiecare spectru de frecvente
         slider = ttk.Scale(
             col_frame,
-            from_=10,
-            to=-10,
+            #TODO: debuguit de ce inca se aude chiar daca gain este 0
+            from_=0,
+            to=2,
             length=200,
-            orient=tk.VERTICAL
-        )
-        slider.set(0)
+            orient=tk.VERTICAL)
+
+        slider.set(1)
         slider.pack()
         sliders.append(slider)
 
-        label = ttk.Label(col_frame, text=freq, font=("Arial", 10))
+        label = ttk.Label(col_frame, text=freq)
         label.pack(pady=5)
 
 frame_path = ttk.Frame(root)
 frame_path.pack(pady=20)
 
-label_signal_path = ttk.Label(
-    frame_path, text="Introdu path-ul către semnal:", font=("Arial", 12)
-)
+label_signal_path = ttk.Label(frame_path, text="Introdu calea catre semnal:")
 label_signal_path.pack(side=tk.LEFT, padx=5)
 
 entry_signal_path = ttk.Entry(frame_path, width=40)
 entry_signal_path.pack(side=tk.LEFT, padx=5)
 
-button_browse = ttk.Button(
-    frame_path, text="Browse", command=lambda: open_file_dialog(entry_signal_path)
-)
+button_browse = ttk.Button(frame_path, text="Browse", command=lambda: open_file_dialog(entry_signal_path))
 button_browse.pack(side=tk.LEFT, padx=5)
 
-label_result = ttk.Label(
-    root, text="", font=("Arial", 12), anchor="center", justify="center", wraplength=800
-)
+label_result = ttk.Label(root, text="", anchor="center", justify="center", wraplength=800)
 label_result.pack(pady=20)
 
 signal = Signal(entry_signal_path, label_result, sliders)
@@ -95,15 +98,11 @@ create_sliders(signal)
 frame_buttons = ttk.Frame(root)
 frame_buttons.pack(pady=20)
 
-button_load = ttk.Button(
-    frame_buttons, text="Încarcă semnalul", command=lambda: execute_action(signal.load_signal)
-)
-button_apply = ttk.Button(
-    frame_buttons, text="Aplică egalizatorul", command=lambda: execute_action(signal.apply_equalizer)
-)
-button_play = ttk.Button(
-    frame_buttons, text="Redă semnalul", command=lambda: execute_action(signal.play_signal)
-)
+button_load = ttk.Button(frame_buttons, text="Incarca semnalul", command=lambda: execute_action(signal.load_signal))
+
+button_apply = ttk.Button(frame_buttons, text="Aplica egalizatorul", command=lambda: execute_action(signal.apply_equalizer))
+
+button_play = ttk.Button(frame_buttons, text="Reda semnalul", command=lambda: execute_action(signal.play_signal))
 
 # List of buttons to manage enable/disable
 all_buttons = [button_load, button_apply, button_play]
@@ -111,10 +110,5 @@ all_buttons = [button_load, button_apply, button_play]
 button_load.pack(side=tk.LEFT, padx=10)
 button_apply.pack(side=tk.LEFT, padx=10)
 button_play.pack(side=tk.LEFT, padx=10)
-
-def execute_action(action):
-    """Execute an action with buttons temporarily disabled."""
-    disable_buttons(all_buttons)
-    root.after(100, lambda: [action(), enable_buttons(all_buttons)])
 
 root.mainloop()

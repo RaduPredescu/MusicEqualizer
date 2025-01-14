@@ -15,19 +15,19 @@ class Signal:
         self.volume_slider = None
 
     def set_volume_control(self, volume_slider):
-        """Set the volume slider."""
+        #seteaza volumul
         self.volume_slider = volume_slider
 
     def load_signal(self):
-        """Load the signal from the specified path."""
+        #incarca semnalul
         self.signal_path = self.entry_signal_path.get().strip()
 
         if not self.signal_path:
-            self.label_result.config(text="Introdu path-ul")
+            self.label_result.config(text="Introdu calea")
             return
 
         if not os.path.exists(self.signal_path):
-            self.label_result.config(text="Path-ul nu exista")
+            self.label_result.config(text="Calea nu exista")
             return
 
         try:
@@ -39,46 +39,48 @@ class Signal:
             self.label_result.config(text=f"Eroare la incarcarea semnalului: {str(e)}")
 
     def apply_equalizer(self):
-        """Apply the equalizer to the entire signal."""
+        #Aplicarea egalizatorului
         if len(self.signal) == 0:
             self.label_result.config(text="Nu este incarcat niciun semnal")
             return
 
-        # Frequency bands for the equalizer
         center_frequencies = [60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000]  # in Hz
-        bandwidth_factor = 1 / 3  # ±1/3 octave
+        bandwidth_factor = 1 / 3  # +-1/3 octave
 
-        # Get FFT bins and frequencies
+        # Spectrul
         freqs = np.fft.rfftfreq(len(self.signal), d=1 / self.sampling_rate)
+
+        #Transformata fourier a semnalului
         signal_fft = np.fft.rfft(self.signal)
 
-        # Apply equalizer gains
+        # aplicarea egalizatorului
         gains = [slider.get() for slider in self.sliders]
         for center, gain in zip(center_frequencies, gains):
-            # Calculate band range
+            # calculam pe care se aplica egalizatorul
+
             low = center / (2 ** (bandwidth_factor / 2))
             high = center * (2 ** (bandwidth_factor / 2))
-
-            # Identify bins in this range
             band = (freqs >= low) & (freqs < high)
 
-            # Apply gain (convert dB to linear scale)
-            signal_fft[band] *= 10 ** (gain)
+            # aplicam gainul corespondent sliderului frecventei
+            
+            #TODO: debuguit de ce inca se aude chiar daca gain este 0
+            signal_fft[band] *= gain
 
-        # Convert back to time domain
+        # convertim inapoi in domeniu timp
         self.processed_signal = np.fft.irfft(signal_fft).astype(np.float32)
 
-        # Apply volume adjustment
+        # ajustare volum
         if self.volume_slider:
             volume = self.volume_slider.get()
             self.processed_signal *= volume
 
-        # Clip to int16 range
+        # reconversie la int16
         self.processed_signal = np.clip(self.processed_signal, -32768, 32767).astype(np.int16)
         self.label_result.config(text="Egalizatorul a fost aplicat")
 
     def play_signal(self):
-        """Play the processed signal."""
+        #redare audio
         if self.processed_signal is None:
             self.label_result.config(text="Aplica egalizatorul înainte de redare")
             return
@@ -86,6 +88,6 @@ class Signal:
         try:
             sd.play(self.processed_signal, samplerate=self.sampling_rate)
             self.label_result.config(text="Redarea a început")
-            sd.wait()  # Block until playback finishes
+            sd.wait() 
         except Exception as e:
             self.label_result.config(text=f"Eroare la redarea semnalului: {str(e)}")
