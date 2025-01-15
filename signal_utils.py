@@ -82,12 +82,12 @@ class Signal:
     def play_signal(self):
         #redare audio
         if self.processed_signal is None:
-            self.label_result.config(text="Aplica egalizatorul înainte de redare")
+            self.label_result.config(text="Aplica egalizatorul inainte de redare")
             return
 
         try:
             sd.play(self.processed_signal, samplerate=self.sampling_rate)
-            self.label_result.config(text="Redarea a început")
+            self.label_result.config(text="Redarea a inceput")
             sd.wait() 
         except Exception as e:
             self.label_result.config(text=f"Eroare la redarea semnalului: {str(e)}")

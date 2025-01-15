@@ -6,7 +6,7 @@ def open_file_dialog(entry):
     #functie pentru cautarea fisierului audio
     file_path = filedialog.askopenfilename(
         title="Selecteaza un fisier audio",
-        filetypes=(("Fisiere WAV", "*.wav"), ("Toate fișierele", "*.*")))
+        filetypes=(("Fisiere WAV", "*.wav"), ("Toate fisierele", "*.*")))
     entry.delete(0, tk.END)
     entry.insert(0, file_path)
 
