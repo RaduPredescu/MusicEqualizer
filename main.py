@@ -10,23 +10,6 @@ def open_file_dialog(entry):
     entry.delete(0, tk.END)
     entry.insert(0, file_path)
 
-def disable_buttons(buttons):
-    #dezactiveaza anumite butoane
-    for button in buttons:
-        button.config(state=tk.DISABLED)
-
-def enable_buttons(buttons):
-    #activeaza anumite butoane
-    for button in buttons:
-        button.config(state=tk.NORMAL)
-
-
-def execute_action(action):
-    #executa o actiune cu butoanele dezactivate
-    disable_buttons(all_buttons)
-    root.after(100, lambda: [action(), enable_buttons(all_buttons)])
-
-
 root = tk.Tk()
 root.title("Egalizator Audio")
 root.geometry("1920x1080")
@@ -50,9 +33,8 @@ def create_sliders(signal_obj):
         #sliderele determina amplificarea pe fiecare spectru de frecvente
         slider = ttk.Scale(
             col_frame,
-            #TODO: debuguit de ce inca se aude chiar daca gain este 0
-            from_=0,
-            to=2,
+            from_=2,
+            to=0,
             length=200,
             orient=tk.VERTICAL)
 
@@ -89,7 +71,7 @@ volume_label.pack(side=tk.LEFT, padx=5)
 volume_slider = ttk.Scale(
     frame_volume, from_=0, to=2, length=200, orient=tk.HORIZONTAL
 )
-volume_slider.set(1)  # Default volume (1x)
+volume_slider.set(1)
 volume_slider.pack(side=tk.LEFT, padx=5)
 
 signal.set_volume_control(volume_slider)
@@ -98,13 +80,13 @@ create_sliders(signal)
 frame_buttons = ttk.Frame(root)
 frame_buttons.pack(pady=20)
 
-button_load = ttk.Button(frame_buttons, text="Incarca semnalul", command=lambda: execute_action(signal.load_signal))
+button_load = ttk.Button(frame_buttons, text="Incarca semnalul", command=lambda: signal.load_signal())
 
-button_apply = ttk.Button(frame_buttons, text="Aplica egalizatorul", command=lambda: execute_action(signal.apply_equalizer))
+button_apply = ttk.Button(frame_buttons, text="Aplica egalizatorul", command=lambda: signal.apply_equalizer())
 
-button_play = ttk.Button(frame_buttons, text="Reda semnalul", command=lambda: execute_action(signal.play_signal))
+button_play = ttk.Button(frame_buttons, text="Reda semnalul", command=lambda: signal.play_signal())
 
-# List of buttons to manage enable/disable
+# lista butoanelor de incarcat, aplicat egalizator si play pentru semnal
 all_buttons = [button_load, button_apply, button_play]
 
 button_load.pack(side=tk.LEFT, padx=10)

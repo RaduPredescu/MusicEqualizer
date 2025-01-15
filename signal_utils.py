@@ -2,6 +2,7 @@ import os
 import numpy as np
 from scipy.io import wavfile
 import sounddevice as sd
+import math
 
 class Signal:
     def __init__(self, entry_signal_path, label_result, sliders):
@@ -44,8 +45,7 @@ class Signal:
             self.label_result.config(text="Nu este incarcat niciun semnal")
             return
 
-        center_frequencies = [60, 120, 250, 500, 1000, 2000, 4000, 8000, 16000]  # in Hz
-        bandwidth_factor = 1 / 3  # +-1/3 octave
+        center_frequencies = [62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]  # in Hz
 
         # Spectrul
         freqs = np.fft.rfftfreq(len(self.signal), d=1 / self.sampling_rate)
@@ -58,13 +58,11 @@ class Signal:
         for center, gain in zip(center_frequencies, gains):
             # calculam pe care se aplica egalizatorul
 
-            low = center / (2 ** (bandwidth_factor / 2))
-            high = center * (2 ** (bandwidth_factor / 2))
+            low = center / (math.sqrt(2))
+            high = center * (math.sqrt(2))
             band = (freqs >= low) & (freqs < high)
 
-            # aplicam gainul corespondent sliderului frecventei
-            
-            #TODO: debuguit de ce inca se aude chiar daca gain este 0
+            #aplicam gain-ul doar pentru banda corespunzatoare (unde band este True)
             signal_fft[band] *= gain
 
         # convertim inapoi in domeniu timp
